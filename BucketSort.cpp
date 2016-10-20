@@ -50,11 +50,11 @@ void BucketSort::sort(unsigned int numCores) {
     // if we can use more than one thread
     if(numCores != 1) {
         std::vector<std::thread> thread(numCores - 1);
-        for (int i = 0; i < numCores - 1; ++i) {
+        for (unsigned int i = 0; i < numCores - 1; ++i) {
             thread[i] = std::thread(&BucketSort::compute, this, std::ref(bucket), std::ref(flag));
         }
 //        compute(bucket, flag);
-        for (int i = 0; i < numCores - 1; ++i) {
+        for (unsigned int i = 0; i < numCores - 1; ++i) {
             thread[i].join();
         }
 
@@ -63,8 +63,8 @@ void BucketSort::sort(unsigned int numCores) {
         compute(bucket, flag);
     }
     numbersToSort.clear();
-    for (int i = 0; i < 10; ++i) {
-        for (int j = 0; j < bucket[i].size() ; ++j) {
+    for (unsigned int i = 0; i < 10; ++i) {
+        for (unsigned int j = 0; j < bucket[i].size() ; ++j) {
             numbersToSort.push_back(bucket[i][j]);
         }
     }

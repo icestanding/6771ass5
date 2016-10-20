@@ -20,8 +20,8 @@ int main() {
 //    for (unsigned int i = 0; i < num; ++i) {
 //        num_thread[i].join();
 //    }
-//    std::cout<<"finish";
-    unsigned int totalNumbers =	5000000;
+//    std::cout<<"finish";  10000000
+    unsigned int totalNumbers =	10000000;
 //    unsigned int printIndex =	259000;
 
     // use totalNumbers required as the seed for the random
@@ -43,9 +43,10 @@ int main() {
     std::cout<<"numCores:"<<numCores<<std::endl;
 
     pbs.sort(numCores);
-    for (unsigned int i=0; i < totalNumbers; ++i) {
-        std::cout<<pbs.numbersToSort[i]<<" ";
-    }
+    std::cout<<"down\n";
+//    for (unsigned int i=0; i < totalNumbers; ++i) {
+//        std::cout<<pbs.numbersToSort[i]<<" ";
+//    }
 
 
 
