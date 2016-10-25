@@ -36,59 +36,62 @@ bool aLessB(const unsigned int& x, const unsigned int& y, unsigned int pow) {
 
 // TODO: replace this with a parallel version. 
 void BucketSort::sort(unsigned int numCores) {
-//    std::sort(numbersToSort.begin(),numbersToSort.end(), [](const unsigned int& x, const unsigned int& y){
-//        return aLessB(x,y,0);} );
 
     // save bucket and flag indicate if current is used by other thread
     std::vector<std::vector<unsigned int>> bucket(10);
     std::vector<bool> flag(10);
-    // pre processing
+    
+    // pre processing, diveded all  number into ten buckets
     preprocess(bucket, flag);
-//    for (int i = 0; i < bucket[1].size(); ++i) {
-//        std::cout<<bucket[1][i]<<std::endl;
-//    }
-    // if we can use more than one thread
+
+    // if we can use more than one thread, dynamically assign buckets to thread that available
     if(numCores != 1) {
         std::vector<std::thread> thread(numCores - 1);
         for (unsigned int i = 0; i < numCores - 1; ++i) {
             thread[i] = std::thread(&BucketSort::compute, this, std::ref(bucket), std::ref(flag));
         }
-//        compute(bucket, flag);
         for (unsigned int i = 0; i < numCores - 1; ++i) {
             thread[i].join();
         }
-
-    }// if we can only use one thread
+    }
+    // if we can only use one thread
     else {
         compute(bucket, flag);
     }
     numbersToSort.clear();
+    // rebuild number_to_sort
     for (unsigned int i = 0; i < 10; ++i) {
         for (unsigned int j = 0; j < bucket[i].size() ; ++j) {
             numbersToSort.push_back(bucket[i][j]);
         }
     }
-
-
 }
 
-
+/**
+ *  pre-process data, divide it into 10 bucket
+ **/
 void BucketSort::preprocess(std::vector<std::vector<unsigned int>> &buckets, std::vector<bool> &flag) {
+    // sort all the number into bucket
     for (auto ele = numbersToSort.begin(); ele != numbersToSort.end(); ++ele) {
         auto left_most = *ele;
         while (left_most / 10 > 0) {
             left_most = left_most / 10;
         }
-
         buckets[left_most].push_back(*ele);
     }
+    // mark all the bucket
     for (unsigned int i = 0; i < 10; ++i) {
         flag[i] = false;
     }
 }
 
-void  BucketSort::compute(std::vector<std::vector<unsigned int>> &bucket, std::vector<bool> &flag) {
 
+/**
+ *  Each thread can sort current sub-bucket if current sub-bucket was not be modified before
+ *  The status of curret sub-bucket is memorised by std::vector<bool> flag, if current one was be modified,
+ *  set to 1, otherwies do sorting.
+ **/
+void  BucketSort::compute(std::vector<std::vector<unsigned int>> &bucket, std::vector<bool> &flag) {
     for (unsigned int i = 0; i < flag.size(); ++i) {
         if(flag[i] == 1) {
             continue;
@@ -101,14 +104,15 @@ void  BucketSort::compute(std::vector<std::vector<unsigned int>> &bucket, std::v
         }
     }
 }
-std::vector<unsigned int> BucketSort::bucketsort(std::vector<unsigned int> bucket, unsigned int position) {
 
-    // including the rightmost
+/**
+ *  recursive sort next digit (divide and conquer)
+ **/
+std::vector<unsigned int> BucketSort::bucketsort(std::vector<unsigned int> bucket, unsigned int position) {
+    // including the rightmost digit which end with (-1)
     std::vector<std::vector<unsigned int>> buckets(11);
     std::vector<unsigned int> result;
-
-
-    // divede the number into ten bucket
+    // divide the number into ten buckets
     for (unsigned int i = 0; i < bucket.size(); ++i) {
         unsigned int tmp = bucket[i];
         int count = 0;
@@ -119,15 +123,15 @@ std::vector<unsigned int> BucketSort::bucketsort(std::vector<unsigned int> bucke
         if(count == 0) {
             buckets[10].push_back(bucket[i]);
         } else {
-//            tmp = tmp - std::pow(10, position + count - 1);
             tmp = tmp%10;
             buckets[tmp].push_back(bucket[i]);
         }
     }
-    // insert right
+    // conquer the smallest bucket first (which end with '-1')
     for (unsigned int k = 0; k <buckets[10].size() ; ++k) {
         result.push_back(buckets[10][k]);
     }
+    // conquer rest number
     for (unsigned int j = 0; j < 10; ++j) {
         if(buckets[j].size() > 1) {
             buckets[j] = BucketSort::bucketsort(buckets[j], position + 1);
