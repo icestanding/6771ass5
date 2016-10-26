@@ -38,10 +38,10 @@ bool aLessB(const unsigned int& x, const unsigned int& y, unsigned int pow) {
 void BucketSort::sort(unsigned int numCores) {
 
     // save bucket and flag indicate if current is used by other thread
-    std::vector<std::vector<unsigned int>> bucket(10);
-    std::vector<bool> flag(10);
+    std::vector<std::vector<unsigned int>>  bucket(10);
+    std::vector<bool>                       flag(10);
     
-    // pre processing, diveded all  number into ten buckets
+    // pre processing, divide all number into ten sub-buckets
     preprocess(bucket, flag);
 
     // if we can use more than one thread, dynamically assign buckets to thread that available
@@ -50,6 +50,7 @@ void BucketSort::sort(unsigned int numCores) {
         for (unsigned int i = 0; i < numCores - 1; ++i) {
             thread[i] = std::thread(&BucketSort::compute, this, std::ref(bucket), std::ref(flag));
         }
+        compute(bucket, flag);
         for (unsigned int i = 0; i < numCores - 1; ++i) {
             thread[i].join();
         }
@@ -109,23 +110,30 @@ void  BucketSort::compute(std::vector<std::vector<unsigned int>> &bucket, std::v
  *  recursive sort next digit (divide and conquer)
  **/
 std::vector<unsigned int> BucketSort::bucketsort(std::vector<unsigned int> bucket, unsigned int position) {
+    
+    // special case, if 2 same number and these two number are in 10^10 range, don't need to do further checking
+    // cause the largest of unsigned int is in 10^10 range
+    if (position>= 10 && bucket.size() == 2 && bucket[0] == bucket[1]) {
+        return bucket;
+    }
     // including the rightmost digit which end with (-1)
     std::vector<std::vector<unsigned int>> buckets(11);
     std::vector<unsigned int> result;
+    unsigned int bucket_num = 0;
     // divide the number into ten buckets
     for (unsigned int i = 0; i < bucket.size(); ++i) {
         unsigned int tmp = bucket[i];
-        int count = 0;
-        while (tmp/10 >= std::pow(10, position)){
+        while (tmp/10 >= (unsigned int) std::round(std::pow(10, position))) {
             tmp = tmp/10;
-            ++count;
         }
-        if(count == 0) {
-            buckets[10].push_back(bucket[i]);
+        // if current position is not -1 position
+        if(tmp >= (unsigned int) std::round(std::pow(10, position))) {
+            bucket_num = tmp%10;
+            buckets[bucket_num].push_back(bucket[i]);
         } else {
-            tmp = tmp%10;
-            buckets[tmp].push_back(bucket[i]);
+            buckets[10].push_back(bucket[i]);
         }
+
     }
     // conquer the smallest bucket first (which end with '-1')
     for (unsigned int k = 0; k <buckets[10].size() ; ++k) {
@@ -134,7 +142,13 @@ std::vector<unsigned int> BucketSort::bucketsort(std::vector<unsigned int> bucke
     // conquer rest number
     for (unsigned int j = 0; j < 10; ++j) {
         if(buckets[j].size() > 1) {
-            buckets[j] = BucketSort::bucketsort(buckets[j], position + 1);
+            // cause the largest of unsigned int is in 10^10 range
+        	if(position + 1 <= 10) {
+            	buckets[j] = BucketSort::bucketsort(buckets[j], position + 1);
+        	}
+        	else {
+        		continue;
+        	}
         }
         for (unsigned int i = 0; i < buckets[j].size(); ++i) {
             result.push_back(buckets[j][i]);
